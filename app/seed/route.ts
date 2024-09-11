@@ -111,9 +111,16 @@ export async function GET() {
     await client.sql`COMMIT`;
 
     return new Response(JSON.stringify({ message: 'Database seeded successfully' }), { status: 200 });
-  } catch (error) {
-    await client.sql`ROLLBACK`;
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  } catch (error: unknown) {
+    // Aseguramos que error sea una instancia de Error antes de acceder a sus propiedades
+    if (error instanceof Error) {
+      await client.sql`ROLLBACK`;
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    } else {
+      // Manejar otros tipos de errores (si es necesario)
+      await client.sql`ROLLBACK`;
+      return new Response(JSON.stringify({ error: 'An unknown error occurred' }), { status: 500 });
+    }
   } finally {
     client.release(); // Asegura que la conexión se libere
   }
